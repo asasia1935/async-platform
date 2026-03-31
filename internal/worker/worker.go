@@ -9,7 +9,9 @@ import (
 	"github.com/asasia1935/async-platform/internal/queue"
 )
 
-func Run(workerID int, q *queue.Queue) {
+const maxRetry = 3
+
+func Run(workerID int, q *queue.Queue, dlq *queue.Queue) {
 
 	for {
 		// BRPop은 블로킹 방식으로 큐에서 메시지를 꺼내옵니다.
@@ -29,6 +31,14 @@ func Run(workerID int, q *queue.Queue) {
 
 			// 재시도 횟수 증가
 			popped.Retry++
+
+			// 최대 재시도 횟수를 초과할 경우
+			if popped.Retry > maxRetry {
+				log.Printf("worker %d max retry reached for message: %s", workerID, popped.Payload)
+				// 최대 재시도 횟수를 초과한 메시지를 DLQ에 넣습니다.
+				dlq.Enqueue(popped)
+				continue
+			}
 
 			// 에러가 발생하면 해당 메시지를 큐에 다시 넣어서 재시도 합니다.
 			q.Enqueue(popped)

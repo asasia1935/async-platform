@@ -28,6 +28,17 @@ func NewQueue() *Queue {
 	}
 }
 
+func NewDLQ() *Queue {
+	rdb := redis.NewClient(&redis.Options{
+		Addr: "localhost:6379",
+	})
+
+	return &Queue{
+		client: rdb,
+		name:   "default:dlq",
+	}
+}
+
 func (q *Queue) Enqueue(msg message.Message) {
 	data, err := json.Marshal(msg)
 	if err != nil {

@@ -9,11 +9,15 @@ import (
 const workerCount = 3
 
 func main() {
+
+	// 큐와 DLQ(Dead Letter Queue) 생성
 	q := queue.NewQueue()
+
+	dlq := queue.NewDLQ()
 
 	// 여러 워커 고루틴을 실행
 	for i := 0; i < workerCount; i++ {
-		go worker.Run(i, q)
+		go worker.Run(i, q, dlq)
 	}
 
 	// 메인 고루틴이 종료되지 않도록 무한 대기
