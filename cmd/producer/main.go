@@ -14,6 +14,7 @@ func main() {
 	msg := message.Message{
 		Type:    "test",
 		Payload: "hello async",
+		Retry:   0,
 	}
 
 	// 테스트를 위해 동일한 메시지를 큐에 담기 -> worker에서 여러 메시지를 동시에 분산 처리되는지 확인용
