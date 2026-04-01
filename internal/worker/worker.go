@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"context"
 	"errors"
 	"log"
 	"time"
@@ -11,13 +12,26 @@ import (
 
 const maxRetry = 3
 
-func Run(workerID int, q *queue.Queue, dlq *queue.Queue) {
+func Run(ctx context.Context, workerID int, q *queue.Queue, dlq *queue.Queue) {
 
 	for {
+		// 컨텍스트로 종료 신호가 오면 루프 탈출 -> 워커 고루틴 정상 종료
+		select {
+		case <-ctx.Done():
+			log.Printf("worker %d shutting down", workerID)
+			return
+		default:
+		}
+
 		// BRPop은 블로킹 방식으로 큐에서 메시지를 꺼내옵니다.
 		// 큐에 메시지가 없으면 새 메시지가 들어올 때까지 대기합니다.
-		popped, err := q.Dequeue()
+		popped, err := q.Dequeue(ctx, 1*time.Second) // 1초 타임아웃 -> 메시지가 없으면 1초마다 타임아웃 에러 발생 -> 워커가 종료 신호를 체크할 수 있도록 함
 		if err != nil {
+			// timeout이면 정상적인 깨어남이므로 그냥 다시 루프
+			if errors.Is(err, queue.ErrDequeueTimeout) {
+				continue
+			}
+
 			// Worker가 계속 실행되도록 에러를 로그로 남기고 루프를 계속합니다.
 			log.Printf("worker %d dequeue error: %v", workerID, err)
 			continue

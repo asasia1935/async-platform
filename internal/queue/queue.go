@@ -5,11 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"time"
 
 	"github.com/asasia1935/async-platform/internal/message"
 	"github.com/redis/go-redis/v9"
 )
 
+var ErrDequeueTimeout = errors.New("dequeue timeout")
+
+// 임의로 넣을 context 생성 -> 실제로는 main에서 context를 생성해서 전달하는 방식으로 변경할 예정
 var ctx = context.Background()
 
 type Queue struct {
@@ -51,9 +55,17 @@ func (q *Queue) Enqueue(msg message.Message) {
 	}
 }
 
-func (q *Queue) Dequeue() (message.Message, error) {
-	result, err := q.client.BRPop(ctx, 0, q.name).Result()
+func (q *Queue) Dequeue(ctx context.Context, timeout time.Duration) (message.Message, error) {
+	result, err := q.client.BRPop(ctx, timeout, q.name).Result()
 	if err != nil {
+		// context cancel이면 그대로 반환
+		if errors.Is(err, context.Canceled) {
+			return message.Message{}, err
+		}
+		// timeout이면 별도 sentinel error 반환
+		if err.Error() == "redis: nil" {
+			return message.Message{}, ErrDequeueTimeout
+		}
 		return message.Message{}, err
 	}
 
