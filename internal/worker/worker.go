@@ -34,6 +34,8 @@ func Run(ctx context.Context, workerID int, q *queue.Queue, dlq *queue.Queue) {
 
 			// Worker가 계속 실행되도록 에러를 로그로 남기고 루프를 계속합니다.
 			log.Printf("worker %d dequeue error: %v", workerID, err)
+			// 에러가 발생하면 잠시 대기 후 재시도 (로그가 너무 많이 찍히는 것을 방지하기 위해)
+			time.Sleep(500 * time.Millisecond)
 			continue
 		}
 
