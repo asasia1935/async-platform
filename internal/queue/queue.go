@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
 	"time"
 
 	"github.com/asasia1935/async-platform/internal/message"
@@ -21,38 +20,29 @@ type Queue struct {
 	name   string
 }
 
-func NewQueue() *Queue {
+func NewQueue(name string) *Queue {
 	rdb := redis.NewClient(&redis.Options{
 		Addr: "localhost:6379",
 	})
 
 	return &Queue{
 		client: rdb,
-		name:   "default",
+		name:   name,
 	}
 }
 
-func NewDLQ() *Queue {
-	rdb := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-	})
-
-	return &Queue{
-		client: rdb,
-		name:   "default:dlq",
-	}
-}
-
-func (q *Queue) Enqueue(msg message.Message) {
+func (q *Queue) Enqueue(msg message.Message) error {
 	data, err := json.Marshal(msg)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	err = q.client.LPush(ctx, q.name, data).Err()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+
+	return nil
 }
 
 func (q *Queue) Dequeue(ctx context.Context, timeout time.Duration) (message.Message, error) {

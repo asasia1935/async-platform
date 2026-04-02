@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	q := queue.NewQueue()
+	q := queue.NewQueue("default")
 
 	msg := message.Message{
 		Type:    "test",
@@ -20,8 +20,11 @@ func main() {
 	// 테스트를 위해 동일한 메시지를 큐에 담기 -> worker에서 여러 메시지를 동시에 분산 처리되는지 확인용
 	for i := 0; i < 10; i++ {
 		msg.Payload = "hello async " + strconv.Itoa(i)
-		q.Enqueue(msg)
-		log.Printf("enqueue: type=%s payload=%s\n", msg.Type, msg.Payload)
+		if err := q.Enqueue(msg); err != nil {
+			log.Printf("enqueue error: %v", err)
+		} else {
+			log.Printf("enqueue: type=%s payload=%s\n", msg.Type, msg.Payload)
+		}
 	}
 
 	/* BRPop은 블로킹 방식으로 큐에서 메시지를 꺼내옵니다.
