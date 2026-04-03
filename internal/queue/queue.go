@@ -20,13 +20,15 @@ type Queue struct {
 	name   string
 }
 
-func NewQueue(name string) *Queue {
-	rdb := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
+func NewRedisClient(addr string) *redis.Client {
+	return redis.NewClient(&redis.Options{
+		Addr: addr,
 	})
+}
 
+func NewQueue(client *redis.Client, name string) *Queue {
 	return &Queue{
-		client: rdb,
+		client: client,
 		name:   name,
 	}
 }

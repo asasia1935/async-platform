@@ -20,9 +20,12 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// Redis 클라이언트 생성 -> 큐와 DLQ(Dead Letter Queue)에서 재사용
+	rdb := queue.NewRedisClient("localhost:6379")
+
 	// 큐와 DLQ(Dead Letter Queue) 생성
-	q := queue.NewQueue("default")
-	dlq := queue.NewQueue("default:dlq")
+	q := queue.NewQueue(rdb, "default")
+	dlq := queue.NewQueue(rdb, "default:dlq")
 
 	// OS 종료 신호 수신 채널
 	sigCh := make(chan os.Signal, 1)                    // OS 신호를 받을 채널 생성 -> 버퍼 크기를 1로 설정하여 Block 없이 신호를 받을 수 있도록 함

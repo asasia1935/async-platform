@@ -9,7 +9,9 @@ import (
 )
 
 func main() {
-	q := queue.NewQueue("default")
+	rdb := queue.NewRedisClient("localhost:6379")
+
+	q := queue.NewQueue(rdb, "default")
 
 	msg := message.Message{
 		Type:    "test",
