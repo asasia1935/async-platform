@@ -10,8 +10,6 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-var ErrDequeueTimeout = errors.New("dequeue timeout")
-
 // 임의로 넣을 context 생성 -> 실제로는 main에서 context를 생성해서 전달하는 방식으로 변경할 예정
 var ctx = context.Background()
 
@@ -69,7 +67,7 @@ func (q *Queue) Dequeue(ctx context.Context, timeout time.Duration) (message.Mes
 	// [0] = queue name
 	// [1] = popped value
 	if len(result) != 2 {
-		return message.Message{}, errors.New("invalid BRPOP result")
+		return message.Message{}, ErrInvalidQueueResult
 	}
 
 	var msg message.Message
