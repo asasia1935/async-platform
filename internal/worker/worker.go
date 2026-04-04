@@ -18,7 +18,7 @@ func Run(ctx context.Context, workerID int, q *queue.Queue, dlq *queue.Queue) {
 		// 컨텍스트로 종료 신호가 오면 루프 탈출 -> 워커 고루틴 정상 종료
 		select {
 		case <-ctx.Done():
-			log.Printf("worker %d shutting down", workerID)
+			log.Printf("level=INFO worker=%d action=worker_stopping reason=context_canceled", workerID)
 			return
 		default:
 		}
@@ -33,34 +33,37 @@ func Run(ctx context.Context, workerID int, q *queue.Queue, dlq *queue.Queue) {
 			}
 
 			// Worker가 계속 실행되도록 에러를 로그로 남기고 루프를 계속합니다.
-			log.Printf("worker %d dequeue error: %v", workerID, err)
+			log.Printf("level=ERROR worker=%d action=dequeue_error queue=%s err=%v", workerID, q.Name(), err)
 			// 에러가 발생하면 잠시 대기 후 재시도 (로그가 너무 많이 찍히는 것을 방지하기 위해)
 			time.Sleep(500 * time.Millisecond)
 			continue
 		}
 
-		log.Printf("worker %d dequeue: type=%s payload=%s\n", workerID, popped.Type, popped.Payload)
+		log.Printf("level=INFO worker=%d action=dequeue queue=%s type=%s payload=%q retry=%d", workerID, q.Name(), popped.Type, popped.Payload, popped.Retry)
 
 		// 메시지 타입에 따라 적절한 핸들러로 분기 처리
 		if err := dispatch(workerID, popped); err != nil {
-			log.Printf("worker %d dispatch error: %v", workerID, err)
+			log.Printf("level=ERROR worker=%d action=dispatch_error queue=%s type=%s payload=%q err=%v", workerID, q.Name(), popped.Type, popped.Payload, err)
 
 			// 재시도 횟수 증가
 			popped.Retry++
 
 			// 최대 재시도 횟수를 초과할 경우
 			if popped.Retry > maxRetry {
-				log.Printf("worker %d max retry reached for message: %s", workerID, popped.Payload)
+				log.Printf("level=ERROR worker=%d action=max_retry_reached queue=%s type=%s payload=%q", workerID, q.Name(), popped.Type, popped.Payload)
+
 				// 최대 재시도 횟수를 초과한 메시지를 DLQ에 넣습니다.
 				dlq.Enqueue(popped)
+				log.Printf("level=WARN worker=%d action=move_to_dlq queue=%s type=%s payload=%q retry=%d reason=max_retry_exceeded", workerID, dlq.Name(), popped.Type, popped.Payload, popped.Retry)
+
 				continue
 			}
 
 			// 에러가 발생하면 해당 메시지를 큐에 다시 넣어서 재시도 합니다.
 			q.Enqueue(popped)
 
-			log.Printf("worker %d retrying message (retry=%d): %s",
-				workerID, popped.Retry, popped.Payload)
+			log.Printf("level=WARN worker=%d action=retry_enqueue queue=%s type=%s payload=%q retry=%d",
+				workerID, q.Name(), popped.Type, popped.Payload, popped.Retry)
 		}
 	}
 }
@@ -75,12 +78,12 @@ func dispatch(workerID int, msg message.Message) error {
 }
 
 func handleTest(workerID int, msg message.Message) error {
-	log.Printf("worker %d handleTest: payload=%s\n", workerID, msg.Payload)
+	log.Printf("level=INFO worker=%d action=handle_test_start payload=%q", workerID, msg.Payload)
 
 	// 실제 worker pool을 실험하기 위해 handleTest에서 지연 추가
 	time.Sleep(2 * time.Second)
 
-	log.Printf("worker %d handleTest Done: payload=%s\n", workerID, msg.Payload)
+	log.Printf("level=INFO worker=%d action=handle_test_done payload=%q", workerID, msg.Payload)
 
 	if msg.Payload == "hello async 5" {
 		return errors.New("simulated error for payload: " + msg.Payload)

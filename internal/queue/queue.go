@@ -33,6 +33,10 @@ func NewQueue(client *redis.Client, name string) *Queue {
 	}
 }
 
+func (q *Queue) Name() string {
+	return q.name
+}
+
 func (q *Queue) Enqueue(msg message.Message) error {
 	data, err := json.Marshal(msg)
 	if err != nil {

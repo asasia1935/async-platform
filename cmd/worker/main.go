@@ -37,7 +37,7 @@ func main() {
 	// 종료 신호를 받으면 cancel 호출
 	go func() {
 		sig := <-sigCh
-		log.Printf("shutdown signal received: %v", sig)
+		log.Printf("level=INFO action=shutdown_signal signal=%q", sig)
 		cancel()
 	}()
 
@@ -55,10 +55,10 @@ func main() {
 
 	// main goroutine도 종료 신호를 기다림
 	<-ctx.Done() // ctx.Done 채널이 닫힐때까지 대기 -> cancel()이 호출되면 ctx.Done 채널이 닫히면서 main goroutine이 종료 신호를 받음
-	log.Println("shutdown started")
+	log.Println("level=INFO action=shutdown_started")
 
 	wg.Wait() // 모든 워커 고루틴이 종료될 때까지 대기
-	log.Println("all workers stopped")
+	log.Println("level=INFO action=all_workers_stopped")
 
-	log.Println("worker main shutdown complete")
+	log.Println("level=INFO action=worker_main_shutdown_complete")
 }

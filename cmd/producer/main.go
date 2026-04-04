@@ -23,9 +23,9 @@ func main() {
 	for i := 0; i < 10; i++ {
 		msg.Payload = "hello async " + strconv.Itoa(i)
 		if err := q.Enqueue(msg); err != nil {
-			log.Printf("enqueue error: %v", err)
+			log.Printf("level=ERROR action=enqueue queue=%s type=%s payload=%q err=%q", q.Name(), msg.Type, msg.Payload, err)
 		} else {
-			log.Printf("enqueue: type=%s payload=%s\n", msg.Type, msg.Payload)
+			log.Printf("level=INFO action=enqueue queue=%s type=%s payload=%q retry=%d", q.Name(), msg.Type, msg.Payload, msg.Retry)
 		}
 	}
 
