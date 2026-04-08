@@ -145,22 +145,27 @@ type Message struct {
 
 이를 통해:
 
-에러 비교 안정성 확보
-의미 기반 에러 처리 가능
-6. 로깅 전략 (Logging)
+- 에러 비교 안정성 확보
+- 의미 기반 에러 처리 가능
+
+## 6. 로깅 전략 (Logging)
 
 로그는 구조화된 형태로 통일하였습니다.
 
+```
 level=INFO worker=1 action=dequeue type=test payload="..." retry=1
+```
 
 특징:
 
-key=value 형태
-action 중심 이벤트 로그
-retry / DLQ / shutdown 흐름 추적 가능
-7. 설계 특징 요약
-Redis List 기반 단순한 Queue 구현
-Worker Pool을 통한 병렬 처리
-Retry / DLQ 기반 실패 대응
-Context + WaitGroup 기반 안전한 종료
-구조화된 로그를 통한 관찰성 확보
+- key=value 형태
+- action 중심 이벤트 로그
+- retry / DLQ / shutdown 흐름 추적 가능
+
+## 7. 설계 특징 요약
+
+- Redis List 기반 단순한 Queue 구현
+- Worker Pool을 통한 병렬 처리
+- Retry / DLQ 기반 실패 대응
+- Context + WaitGroup 기반 안전한 종료
+- 구조화된 로그를 통한 관찰성 확보
