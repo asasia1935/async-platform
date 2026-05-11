@@ -53,14 +53,14 @@ func Run(ctx context.Context, workerID int, q *queue.Queue, dlq *queue.Queue) {
 				log.Printf("level=ERROR worker=%d action=max_retry_reached queue=%s type=%s payload=%q", workerID, q.Name(), popped.Type, popped.Payload)
 
 				// 최대 재시도 횟수를 초과한 메시지를 DLQ에 넣습니다.
-				dlq.Enqueue(popped)
+				dlq.Enqueue(ctx, popped)
 				log.Printf("level=WARN worker=%d action=move_to_dlq queue=%s type=%s payload=%q retry=%d reason=max_retry_exceeded", workerID, dlq.Name(), popped.Type, popped.Payload, popped.Retry)
 
 				continue
 			}
 
 			// 에러가 발생하면 해당 메시지를 큐에 다시 넣어서 재시도 합니다.
-			q.Enqueue(popped)
+			q.Enqueue(ctx, popped)
 
 			log.Printf("level=WARN worker=%d action=retry_enqueue queue=%s type=%s payload=%q retry=%d",
 				workerID, q.Name(), popped.Type, popped.Payload, popped.Retry)

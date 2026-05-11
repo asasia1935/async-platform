@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"strconv"
 
@@ -9,6 +10,8 @@ import (
 )
 
 func main() {
+	ctx := context.Background()
+
 	rdb := queue.NewRedisClient("localhost:6379")
 
 	q := queue.NewQueue(rdb, "default")
@@ -22,7 +25,7 @@ func main() {
 	// 테스트를 위해 동일한 메시지를 큐에 담기 -> worker에서 여러 메시지를 동시에 분산 처리되는지 확인용
 	for i := 0; i < 10; i++ {
 		msg.Payload = "hello async " + strconv.Itoa(i)
-		if err := q.Enqueue(msg); err != nil {
+		if err := q.Enqueue(ctx, msg); err != nil {
 			log.Printf("level=ERROR action=enqueue queue=%s type=%s payload=%q err=%q", q.Name(), msg.Type, msg.Payload, err)
 		} else {
 			log.Printf("level=INFO action=enqueue queue=%s type=%s payload=%q retry=%d", q.Name(), msg.Type, msg.Payload, msg.Retry)

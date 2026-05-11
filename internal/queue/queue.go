@@ -11,8 +11,6 @@ import (
 )
 
 // 임의로 넣을 context 생성 -> 실제로는 main에서 context를 생성해서 전달하는 방식으로 변경할 예정
-var ctx = context.Background()
-
 type Queue struct {
 	client *redis.Client
 	name   string
@@ -35,7 +33,7 @@ func (q *Queue) Name() string {
 	return q.name
 }
 
-func (q *Queue) Enqueue(msg message.Message) error {
+func (q *Queue) Enqueue(ctx context.Context, msg message.Message) error {
 	data, err := json.Marshal(msg)
 	if err != nil {
 		return err
