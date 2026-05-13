@@ -70,14 +70,16 @@ func Run(ctx context.Context, workerID int, q *queue.Queue, dlq *queue.Queue) {
 
 func dispatch(workerID int, msg message.Message) error {
 	switch msg.Type {
-	case "test":
-		return handleTest(workerID, msg)
+	case "test.success":
+		return handleTestSuccess(workerID, msg)
+	case "test.fail":
+		return handleTestFail(workerID, msg)
 	default:
 		return ErrUnknownMessageType
 	}
 }
 
-func handleTest(workerID int, msg message.Message) error {
+func handleTestSuccess(workerID int, msg message.Message) error {
 	log.Printf("level=INFO worker=%d action=handle_test_start payload=%q", workerID, msg.Payload)
 
 	// 실제 worker pool을 실험하기 위해 handleTest에서 지연 추가
@@ -85,10 +87,15 @@ func handleTest(workerID int, msg message.Message) error {
 
 	log.Printf("level=INFO worker=%d action=handle_test_done payload=%q", workerID, msg.Payload)
 
-	// 테스트를 위해 특정 페이로드에서 에러를 발생시키도록 함 -> 재시도 로직과 DLQ 이동 로직이 정상적으로 동작하는지 확인하기 위함 (에러 메시지 정의 X)
-	if msg.Payload == "hello async 5" {
-		return errors.New("simulated error for payload: " + msg.Payload)
-	}
-
 	return nil
+}
+
+func handleTestFail(workerID int, msg message.Message) error {
+	log.Printf("level=INFO worker=%d action=handle_test_fail_start payload=%q", workerID, msg.Payload)
+
+	time.Sleep(2 * time.Second)
+
+	log.Printf("level=ERROR worker=%d action=handle_test_fail_done payload=%q", workerID, msg.Payload)
+
+	return errors.New("simulated failure for message type: " + msg.Type)
 }

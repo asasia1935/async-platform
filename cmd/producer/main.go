@@ -17,13 +17,17 @@ func main() {
 	q := queue.NewQueue(rdb, "default")
 
 	msg := message.Message{
-		Type:    "test",
+		Type:    "test.success",
 		Payload: "hello async",
 		Retry:   0,
 	}
 
 	// 테스트를 위해 동일한 메시지를 큐에 담기 -> worker에서 여러 메시지를 동시에 분산 처리되는지 확인용
 	for i := 0; i < 10; i++ {
+		msg.Type = "test.success"
+		if i == 5 {
+			msg.Type = "test.fail"
+		}
 		msg.Payload = "hello async " + strconv.Itoa(i)
 		if err := q.Enqueue(ctx, msg); err != nil {
 			log.Printf("level=ERROR action=enqueue queue=%s type=%s payload=%q err=%q", q.Name(), msg.Type, msg.Payload, err)
