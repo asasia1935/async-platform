@@ -45,6 +45,13 @@ func Run(ctx context.Context, workerID int, q *queue.Queue, dlq *queue.Queue) {
 		if err := dispatch(workerID, popped); err != nil {
 			log.Printf("level=ERROR worker=%d action=dispatch_error queue=%s type=%s payload=%q err=%v", workerID, q.Name(), popped.Type, popped.Payload, err)
 
+			if !isRetryableError(err) {
+				dlq.Enqueue(ctx, popped)
+				log.Printf("level=WARN worker=%d action=move_to_dlq queue=%s type=%s payload=%q retry=%d reason=non_retryable_error", workerID, dlq.Name(), popped.Type, popped.Payload, popped.Retry)
+
+				continue
+			}
+
 			// 재시도 횟수 증가
 			popped.Retry++
 
@@ -66,6 +73,14 @@ func Run(ctx context.Context, workerID int, q *queue.Queue, dlq *queue.Queue) {
 				workerID, q.Name(), popped.Type, popped.Payload, popped.Retry)
 		}
 	}
+}
+
+func isRetryableError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	return !errors.Is(err, ErrUnknownMessageType)
 }
 
 func dispatch(workerID int, msg message.Message) error {

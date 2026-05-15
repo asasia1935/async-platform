@@ -40,3 +40,35 @@ func TestDispatchUnknownTypeReturnsErrUnknownMessageType(t *testing.T) {
 		t.Fatalf("dispatch() error = %v, want ErrUnknownMessageType", err)
 	}
 }
+
+func TestIsRetryableError(t *testing.T) {
+	tests := []struct {
+		name string
+		err  error
+		want bool
+	}{
+		{
+			name: "nil error is not retryable",
+			err:  nil,
+			want: false,
+		},
+		{
+			name: "unknown message type is not retryable",
+			err:  ErrUnknownMessageType,
+			want: false,
+		},
+		{
+			name: "generic error is retryable",
+			err:  errors.New("temporary handler failure"),
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isRetryableError(tt.err); got != tt.want {
+				t.Fatalf("isRetryableError() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
